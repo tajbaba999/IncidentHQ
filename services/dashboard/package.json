@@ -1,23 +1,23 @@
 {
-  "name": "@pulseping/dashboard",
+  "name": "pulseping",
   "version": "1.0.0",
   "private": true,
+  "workspaces": [
+    "libs/*",
+    "services/*"
+  ],
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "pnpm --filter @pulseping/shared build && pnpm --filter @pulseping/api build && pnpm --filter @pulseping/worker build",
+    "build:web": "next build",
     "start": "next start",
-    "lint": "next lint"
-  },
-  "dependencies": {
-    "@pulseping/shared": "workspace:*",
-    "next": "^16.0.0",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "dev:api": "pnpm --filter @pulseping/api dev",
+    "dev:worker": "pnpm --filter @pulseping/worker dev",
+    "docker:up": "docker-compose up -d",
+    "docker:down": "docker-compose down"
   },
   "devDependencies": {
-    "@types/node": "^22",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
-    "typescript": "^5"
+    "next": "^16.0.0",
+    "typescript": "^5.9.3"
   }
 }
