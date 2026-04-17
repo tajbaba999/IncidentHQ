@@ -1,0 +1,10 @@
+variable "environment" { type = string }
+variable "project" { type = string }
+variable "vpc_id" { type = string }
+variable "subnet_ids" { type = list(string) }
+variable "security_group_ids" { type = list(string) }
+variable "ecs_service_api_name" { type = string }
+variable "ecs_api_target_group_arn" { type = string }
+variable "domain_name" { type = string }
+variable "hosted_zone_id" { type = string }
+variable "tags" { type = map(string) }

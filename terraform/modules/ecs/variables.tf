@@ -1,0 +1,15 @@
+variable "environment" { type = string }
+variable "project" { type = string }
+variable "vpc_id" { type = string }
+variable "private_subnet_ids" { type = list(string) }
+variable "security_group_ids" { type = list(string) }
+variable "ecr_api_image_uri" { type = string }
+variable "ecr_worker_image_uri" { type = string }
+variable "database_url" { type = string }
+variable "aws_region" { type = string }
+variable "sqs_queue_url" { type = string }
+variable "clerk_secret_key" { type = string }
+variable "log_level" { type = string }
+variable "desired_count_api" { type = number }
+variable "desired_count_worker" { type = number }
+variable "tags" { type = map(string) }
