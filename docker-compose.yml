@@ -20,6 +20,11 @@ services:
     depends_on:
       - postgres
     restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   worker:
     build:
@@ -36,6 +41,11 @@ services:
     depends_on:
       - postgres
     restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   postgres:
     image: postgres:16-alpine
@@ -71,5 +81,40 @@ services:
       timeout: 5s
       retries: 5
 
+  loki:
+    image: grafana/loki:3.2.0
+    ports:
+      - "3100:3100"
+    volumes:
+      - ./config/promtail.yml:/etc/promtail/promtail.yml:ro
+      - loki_data:/loki
+    command: -config.file=/etc/loki/local-config.yaml
+    restart: unless-stopped
+
+  promtail:
+    image: grafana/promtail:3.2.0
+    volumes:
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - ./config/promtail.yml:/etc/promtail/promtail.yml:ro
+    depends_on:
+      - loki
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:11.5.0
+    ports:
+      - "3001:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - ./config/grafana/provisioning:/etc/grafana/provisioning:ro
+      - grafana_data:/var/lib/grafana
+    depends_on:
+      - loki
+    restart: unless-stopped
+
 volumes:
   postgres_data:
+  loki_data:
+  grafana_data:
