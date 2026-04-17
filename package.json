@@ -7,13 +7,17 @@
     "services/*"
   ],
   "scripts": {
+    "dev": "next dev",
+    "build": "pnpm --filter @pulseping/shared build && pnpm --filter @pulseping/api build && pnpm --filter @pulseping/worker build",
+    "build:web": "next build",
+    "start": "next start",
     "dev:api": "pnpm --filter @pulseping/api dev",
     "dev:worker": "pnpm --filter @pulseping/worker dev",
-    "build": "pnpm --filter @pulseping/shared build && pnpm --filter @pulseping/api build && pnpm --filter @pulseping/worker build",
     "docker:up": "docker-compose up -d",
     "docker:down": "docker-compose down"
   },
   "devDependencies": {
+    "next": "^16.0.0",
     "typescript": "^5.9.3"
   }
 }

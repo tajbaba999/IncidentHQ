@@ -1,0 +1,5 @@
+{
+  "buildCommand": "pnpm --filter @pulseping/dashboard build",
+  "outputDirectory": ".next",
+  "framework": "nextjs"
+}
