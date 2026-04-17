@@ -1,31 +1,24 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+# Terraform
+*.tfstate
+*.tfstate.*
+.terraform/
+.terraform.lock.hcl
+*.tfvars
+*.tfplan
 
-# dependencies
-/node_modules
+# IDE
+.idea/
+.vscode/
 
-# next.js
-/.next/
-/out/
+# Logs
+*.log
 
-# production
-/build
+# Environment
+.env
+.env.local
+.env.*.local
 
-# debug
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-.pnpm-debug.log*
-
-# env files
-.env*
-
-# vercel
-.vercel
-
-# typescript
-*.tsbuildinfo
-next-env.d.ts
-/lib/generated/prisma
-
-# clerk configuration (can include secrets)
-/.clerk/
+# Build
+node_modules/
+dist/
+.next/
