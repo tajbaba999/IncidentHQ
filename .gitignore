@@ -22,3 +22,8 @@
 node_modules/
 dist/
 .next/
+lib/generated/
+tsconfig.tsbuildinfo
+
+# OS
+.DS_Store
