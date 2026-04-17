@@ -2,12 +2,6 @@
   "name": "pulseping",
   "version": "1.0.0",
   "private": true,
-  "workspaces": [
-    "libs/shared",
-    "services/api",
-    "services/worker",
-    "services/dashboard"
-  ],
   "scripts": {
     "dev:api": "pnpm --filter @pulseping/api dev",
     "dev:worker": "pnpm --filter @pulseping/worker dev",
