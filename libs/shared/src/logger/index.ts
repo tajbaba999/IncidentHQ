@@ -21,16 +21,16 @@ function createLogger(): Logger {
       ? { target: 'pino-pretty', options: { colorize: true, translateTime: 'SYS:standard' } }
       : undefined,
     formatters: {
-      level: (label) => ({ level: label.toUpperCase() }),
+      level: (label: string) => ({ level: label.toUpperCase() }),
     },
     serializers: {
       err: pino.stdSerializers.err,
-      req: (req) => ({
+      req: (req: { method?: string; url?: string; headers?: { host?: string } }) => ({
         method: req.method,
         url: req.url,
-        headers: { host: req.headers.host },
+        headers: { host: req.headers?.host },
       }),
-      res: (res) => ({
+      res: (res: { statusCode?: number }) => ({
         statusCode: res.statusCode,
       }),
     },
