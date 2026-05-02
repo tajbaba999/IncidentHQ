@@ -27,3 +27,7 @@ tsconfig.tsbuildinfo
 
 # OS
 .DS_Store
+**/.DS_Store
+
+# Next.js generated
+next-env.d.ts

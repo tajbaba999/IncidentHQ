@@ -97,7 +97,7 @@ export function RegisterForm() {
     return (
       <form onSubmit={handleVerification} className="space-y-4">
         {error && (
-          <div className="rounded-lg bg-destructive/10 p-3 text-sm text-destructive">
+          <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
             {error}
           </div>
         )}
@@ -141,7 +141,7 @@ export function RegisterForm() {
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       {error && (
-        <div className="rounded-lg bg-destructive/10 p-3 text-sm text-destructive">
+        <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
           {error}
         </div>
       )}
@@ -196,6 +196,8 @@ export function RegisterForm() {
           </Link>
         </Label>
       </div>
+
+      <div id="clerk-captcha" />
 
       <Button type="submit" className="w-full" disabled={isLoading || !agreed || !isLoaded}>
         {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}

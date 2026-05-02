@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Activity, AlertTriangle, CheckCircle2, Clock, Loader2 } from "lucide-react"
+import { Activity, AlertTriangle, CheckCircle2, Clock, Loader2, TrendingUp } from "lucide-react"
 import { MonitorsList } from "@/components/dashboard/monitors-list"
 import { UptimeChart } from "@/components/dashboard/uptime-chart"
 
@@ -12,6 +12,7 @@ interface DashboardStats {
   incidentsCount: number
   avgResponseTime: number
   overallUptime: number
+  [key: string]: number
 }
 
 export default function DashboardPage() {
@@ -42,7 +43,7 @@ export default function DashboardPage() {
     {
       title: "Total Monitors",
       value: loading ? "-" : stats?.totalMonitors?.toString() || "0",
-      description: "Active monitors",
+      description: "Configured monitors",
       icon: Activity,
     },
     {
@@ -56,6 +57,12 @@ export default function DashboardPage() {
       value: loading ? "-" : stats?.incidentsCount?.toString() || "0",
       description: "Monitors currently down",
       icon: AlertTriangle,
+    },
+    {
+      title: "Overall Uptime",
+      value: loading ? "-" : `${stats?.overallUptime ?? 0}%`,
+      description: "Last 30 days",
+      icon: TrendingUp,
     },
     {
       title: "Avg Response",
@@ -72,7 +79,7 @@ export default function DashboardPage() {
         <p className="text-muted-foreground">Monitor your API health and performance at a glance.</p>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
         {statsCards.map((stat) => (
           <Card key={stat.title}>
             <CardHeader className="flex flex-row items-center justify-between pb-2">

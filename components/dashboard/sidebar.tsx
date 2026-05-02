@@ -15,6 +15,7 @@ import {
   ChevronLeft,
   Menu,
   FolderKanban,
+  CreditCard,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useState } from "react"
@@ -27,6 +28,7 @@ const navigation = [
   { name: "Alerts", href: "/dashboard/alerts", icon: Bell },
   { name: "Postmortems", href: "/dashboard/postmortems", icon: FileText },
   { name: "Integrations", href: "/dashboard/integrations", icon: Mail },
+  { name: "Billing", href: "/dashboard/billing", icon: CreditCard },
   { name: "Settings", href: "/dashboard/settings", icon: Settings },
 ]
 
