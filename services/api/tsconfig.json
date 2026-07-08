@@ -12,8 +12,8 @@
     "moduleResolution": "node",
     "resolveJsonModule": true,
     "paths": {
-      "@pulseping/shared": ["../../libs/shared/src"],
-      "@pulseping/shared/*": ["../../libs/shared/src/*"]
+      "@pulseping/shared": ["../../libs/shared/dist"],
+      "@pulseping/shared/*": ["../../libs/shared/dist/*"]
     }
   },
   "include": ["src/**/*"],

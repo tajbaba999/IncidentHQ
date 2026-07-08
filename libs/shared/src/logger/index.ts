@@ -9,10 +9,7 @@ export interface LogContext {
   [key: string]: unknown;
 }
 
-export interface Logger extends pino.Logger {
-  child(context: LogContext): Logger;
-  withCorrelationId(correlationId: string): Logger;
-}
+export type Logger = pino.Logger;
 
 function createLogger(): Logger {
   const logger = pino({
@@ -38,7 +35,7 @@ function createLogger(): Logger {
     base: { service: 'pulseping' },
   });
 
-  return logger as Logger;
+  return logger;
 }
 
 export const logger = createLogger();

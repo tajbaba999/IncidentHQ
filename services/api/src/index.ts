@@ -1,4 +1,4 @@
-import Fastify from 'fastify';
+import Fastify, { type FastifyError } from 'fastify';
 import cors from '@fastify/cors';
 import helmet from '@fastify/helmet';
 import rateLimit from '@fastify/rate-limit';
@@ -47,7 +47,7 @@ async function start() {
       }, 'Request completed');
     });
 
-    fastify.setErrorHandler(async (error, request, reply) => {
+    fastify.setErrorHandler<FastifyError>(async (error, request, reply) => {
       logger.error({ 
         err: error, 
         method: request.method, 
