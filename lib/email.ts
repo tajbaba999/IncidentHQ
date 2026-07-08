@@ -1,7 +1,14 @@
 import { Resend } from 'resend'
 
-// Initialize Resend client
-const resend = new Resend(process.env.RESEND_API_KEY)
+// Lazily initialize Resend client — constructing it at module scope
+// crashes `next build` (page data collection) when RESEND_API_KEY is unset
+let resendClient: Resend | null = null
+function getResend(): Resend {
+    if (!resendClient) {
+        resendClient = new Resend(process.env.RESEND_API_KEY)
+    }
+    return resendClient
+}
 
 // From email - use your verified domain or Resend dev email
 const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || 'PulsePing <onboarding@resend.dev>'
@@ -29,7 +36,7 @@ export async function sendMonitorFailureEmail({
     try {
         console.log(`📧 Sending failure notification to ${to} for "${monitorName}"`)
 
-        const { data, error } = await resend.emails.send({
+        const { data, error } = await getResend().emails.send({
             from: FROM_EMAIL,
             to: [to],
             subject: `🚨 Monitor Alert: ${monitorName} is DOWN`,
