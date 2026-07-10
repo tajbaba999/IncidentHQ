@@ -130,6 +130,23 @@ export function worstStatus(statuses: ComponentStatus[]): ComponentStatus {
 }
 
 // =====================================
+// Owner helpers (dashboard API routes)
+// =====================================
+
+export const SLUG_REGEX = /^[a-z0-9-]{3,50}$/
+
+/**
+ * Load a status page only if it belongs to the given user.
+ * Used by the owner API routes for tenant isolation.
+ */
+export async function getOwnedStatusPage(statusPageId: string, userId: string) {
+    return prisma.statusPage.findFirst({
+        where: { id: statusPageId, project: { userId } },
+        select: { id: true, slug: true, projectId: true },
+    })
+}
+
+// =====================================
 // Public status page DTO
 // =====================================
 

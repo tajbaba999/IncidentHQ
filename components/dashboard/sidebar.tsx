@@ -16,6 +16,7 @@ import {
   Menu,
   FolderKanban,
   CreditCard,
+  Globe,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useState } from "react"
@@ -26,6 +27,7 @@ const navigation = [
   { name: "Projects", href: "/dashboard/projects", icon: FolderKanban },
   { name: "Monitors", href: "/dashboard/monitors", icon: Monitor },
   { name: "Alerts", href: "/dashboard/alerts", icon: Bell },
+  { name: "Status Page", href: "/dashboard/status-page", icon: Globe },
   { name: "Postmortems", href: "/dashboard/postmortems", icon: FileText },
   { name: "Integrations", href: "/dashboard/integrations", icon: Mail },
   { name: "Billing", href: "/dashboard/billing", icon: CreditCard },
