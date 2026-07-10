@@ -37,14 +37,15 @@ model User {
 // PROJECT
 // =====================================
 model Project {
-  id          String    @id @default(cuid())
+  id          String      @id @default(cuid())
   userId      String
-  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
   name        String
   description String?
   monitors    Monitor[]
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  statusPage  StatusPage?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
 
   @@index([userId])
 }
@@ -53,24 +54,25 @@ model Project {
 // MONITOR
 // =====================================
 model Monitor {
-  id             String       @id @default(cuid())
-  projectId      String
-  project        Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  name           String
-  url            String
-  description    String?
-  method         HttpMethod   @default(GET)
-  expectedStatus Int          @default(200)
-  frequency      Int // interval in seconds
-  isActive       Boolean      @default(true)
-  alertEmail     String?
-  authType       AuthType     @default(NONE)
-  authData       Json?
-  monitorRuns    MonitorRun[]
-  alerts         Alert[]
-  postmortems    Postmortem[]
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
+  id              String           @id @default(cuid())
+  projectId       String
+  project         Project          @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  name            String
+  url             String
+  description     String?
+  method          HttpMethod       @default(GET)
+  expectedStatus  Int              @default(200)
+  frequency       Int // interval in seconds
+  isActive        Boolean          @default(true)
+  alertEmail      String?
+  authType        AuthType         @default(NONE)
+  authData        Json?
+  monitorRuns     MonitorRun[]
+  alerts          Alert[]
+  postmortems     Postmortem[]
+  statusComponent StatusComponent?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
 
   @@index([projectId])
   @@index([isActive])
@@ -91,6 +93,7 @@ model MonitorRun {
 
   @@index([monitorId])
   @@index([createdAt])
+  @@index([monitorId, createdAt])
 }
 
 // =====================================
@@ -124,6 +127,7 @@ model Integration {
   createdAt DateTime        @default(now())
   updatedAt DateTime        @updatedAt
 
+  @@unique([userId, type])
   @@index([userId])
 }
 
@@ -169,8 +173,123 @@ model Postmortem {
 }
 
 // =====================================
+// STATUS PAGE (public, incident.io-style)
+// =====================================
+model StatusPage {
+  id          String             @id @default(cuid())
+  projectId   String             @unique
+  project     Project            @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  slug        String             @unique // validated /^[a-z0-9-]{3,50}$/ in API
+  name        String
+  description String?
+  logoUrl     String?
+  brandColor  String?
+  isPublished Boolean            @default(false)
+  groups      ComponentGroup[]
+  incidents   Incident[]
+  subscribers StatusSubscriber[]
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+}
+
+model ComponentGroup {
+  id           String            @id @default(cuid())
+  statusPageId String
+  statusPage   StatusPage        @relation(fields: [statusPageId], references: [id], onDelete: Cascade)
+  name         String
+  displayOrder Int               @default(0)
+  components   StatusComponent[]
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+
+  @@index([statusPageId])
+}
+
+model StatusComponent {
+  id           String              @id @default(cuid())
+  groupId      String
+  group        ComponentGroup      @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  monitorId    String              @unique
+  monitor      Monitor             @relation(fields: [monitorId], references: [id], onDelete: Cascade)
+  displayName  String
+  displayOrder Int                 @default(0)
+  manualStatus ComponentStatus? // null = derive automatically from monitor runs
+  incidents    IncidentComponent[]
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+
+  @@index([groupId])
+}
+
+model Incident {
+  id           String              @id @default(cuid())
+  statusPageId String
+  statusPage   StatusPage          @relation(fields: [statusPageId], references: [id], onDelete: Cascade)
+  title        String
+  severity     Severity?
+  status       IncidentStatus      @default(INVESTIGATING)
+  startedAt    DateTime            @default(now())
+  resolvedAt   DateTime?
+  updates      IncidentUpdate[]
+  components   IncidentComponent[]
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+
+  @@index([statusPageId])
+  @@index([statusPageId, status])
+}
+
+model IncidentUpdate {
+  id         String         @id @default(cuid())
+  incidentId String
+  incident   Incident       @relation(fields: [incidentId], references: [id], onDelete: Cascade)
+  status     IncidentStatus
+  message    String
+  createdAt  DateTime       @default(now())
+
+  @@index([incidentId])
+}
+
+model IncidentComponent {
+  incidentId  String
+  incident    Incident        @relation(fields: [incidentId], references: [id], onDelete: Cascade)
+  componentId String
+  component   StatusComponent @relation(fields: [componentId], references: [id], onDelete: Cascade)
+
+  @@id([incidentId, componentId])
+  @@index([componentId])
+}
+
+model StatusSubscriber {
+  id           String     @id @default(cuid())
+  statusPageId String
+  statusPage   StatusPage @relation(fields: [statusPageId], references: [id], onDelete: Cascade)
+  email        String
+  token        String     @unique @default(cuid()) // unsubscribe token
+  verifiedAt   DateTime?
+  createdAt    DateTime   @default(now())
+
+  @@unique([statusPageId, email])
+  @@index([statusPageId])
+}
+
+// =====================================
 // ENUMS
 // =====================================
+enum ComponentStatus {
+  OPERATIONAL
+  DEGRADED
+  DOWN
+  MAINTENANCE
+}
+
+enum IncidentStatus {
+  INVESTIGATING
+  IDENTIFIED
+  MONITORING
+  RESOLVED
+}
+
 enum HttpMethod {
   GET
   POST
