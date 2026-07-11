@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma"
+import { schedulerEnabled } from "@/lib/config"
 
 interface MonitorSchedule {
     monitorId: string
@@ -166,7 +167,9 @@ class MonitorScheduler {
 // Singleton instance
 export const monitorScheduler = new MonitorScheduler()
 
-// Auto-start the scheduler when this module is imported
-if (process.env.NODE_ENV !== 'test') {
+// Auto-start only in long-lived processes (self-host / local dev):
+// on Vercel serverless the intervals die with the invocation (SaaS uses the
+// cron sweep instead), and during `next build` it only spams DB errors.
+if (schedulerEnabled()) {
     monitorScheduler.start().catch(console.error)
 }

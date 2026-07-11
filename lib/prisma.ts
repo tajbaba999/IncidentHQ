@@ -1,9 +1,17 @@
 import { PrismaClient } from '@/lib/generated/prisma/client'
 import { PrismaNeon } from '@prisma/adapter-neon'
+import { PrismaPg } from '@prisma/adapter-pg'
+import { isSelfHosted } from '@/lib/config'
 
 const prismaClientSingleton = () => {
     const connectionString = process.env.DATABASE_URL!
-    const adapter = new PrismaNeon({ connectionString })
+    // Neon's serverless driver speaks Neon's proxy protocol, not plain TCP —
+    // self-hosted (and any non-Neon database, e.g. local Docker Postgres)
+    // needs the standard pg driver.
+    const useNeon = !isSelfHosted() && connectionString?.includes('neon.tech')
+    const adapter = useNeon
+        ? new PrismaNeon({ connectionString })
+        : new PrismaPg({ connectionString })
     return new PrismaClient({ adapter })
 }
 

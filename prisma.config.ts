@@ -10,7 +10,6 @@ export default defineConfig({
     path: "prisma/migrations",
   },
   datasource: {
-    // Use process.env directly with fallback for prisma generate (doesn't need real DB)
     url: process.env.DATABASE_URL || "postgresql://placeholder:placeholder@localhost:5432/placeholder",
   },
 });

@@ -1,5 +1,11 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": "nextjs",
-  "buildCommand": "pnpm build:web"
+  "buildCommand": "pnpm build:web",
+  "crons": [
+    {
+      "path": "/api/cron/health-check",
+      "schedule": "* * * * *"
+    }
+  ]
 }
