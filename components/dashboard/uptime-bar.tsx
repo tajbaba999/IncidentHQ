@@ -13,10 +13,8 @@ interface UptimeBarProps {
   data: UptimeDay[]
   startLabel?: string
   showLegend?: boolean
-  // When set, only the most recent N cells are visible on small screens
   mobileVisibleDays?: number
   className?: string
-  // Override label color for pages that don't use the app theme (public status page is always light)
   labelsClassName?: string
 }
 

@@ -3,6 +3,7 @@ import { revalidatePath } from "next/cache"
 import { prisma } from "@/lib/prisma"
 import { getDbUserId } from "@/lib/auth"
 import { getOwnedStatusPage, incidentInclude } from "@/lib/status-page"
+import { notifyIncidentEvent } from "@/lib/notifications"
 import { IncidentStatus } from "@/lib/generated/prisma/client"
 
 export async function POST(
@@ -56,6 +57,9 @@ export async function POST(
             },
             include: incidentInclude
         })
+
+        // Awaited: fire-and-forget dies when the serverless response ends
+        await notifyIncidentEvent({ statusPageId: id, incidentId, kind: 'updated' })
 
         revalidatePath(`/status/${page.slug}`)
         revalidatePath(`/status/${page.slug}/history`)

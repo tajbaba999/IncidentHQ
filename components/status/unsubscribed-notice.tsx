@@ -3,8 +3,7 @@
 import { useEffect, useState } from "react"
 import { X } from "lucide-react"
 
-// Reads ?unsubscribed=1 client-side so the page itself can stay ISR-cached
-// (reading searchParams in the server component would force dynamic rendering).
+
 export function UnsubscribedNotice() {
   const [visible, setVisible] = useState(false)
 

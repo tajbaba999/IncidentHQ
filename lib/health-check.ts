@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma"
 import { sendMonitorFailureEmail } from "@/lib/email"
+import { notifyMonitorDownSlack } from "@/lib/notifications"
 
 export interface HealthCheckResult {
     success: boolean
@@ -29,7 +30,7 @@ export async function performHealthCheck(monitorId: string): Promise<HealthCheck
                 project: {
                     select: {
                         user: {
-                            select: { email: true }
+                            select: { id: true, email: true }
                         }
                     }
                 }
@@ -99,7 +100,7 @@ export async function performHealthCheck(monitorId: string): Promise<HealthCheck
             }
         })
 
-        // Send email notification on failure
+        // Send email + Slack notifications on failure
         if (!success && monitor.project?.user?.email) {
             await sendMonitorFailureEmail({
                 to: monitor.project.user.email,
@@ -109,6 +110,20 @@ export async function performHealthCheck(monitorId: string): Promise<HealthCheck
                 message: failureMessage,
                 responseTime
             })
+        }
+        if (!success && monitor.project?.user?.id) {
+            try {
+                await notifyMonitorDownSlack({
+                    userId: monitor.project.user.id,
+                    monitorName: monitor.name,
+                    url: monitor.url,
+                    statusCode,
+                    responseTime,
+                    message: failureMessage
+                })
+            } catch (slackError) {
+                console.error("Failed to send Slack notification:", slackError)
+            }
         }
 
         return {
@@ -123,6 +138,7 @@ export async function performHealthCheck(monitorId: string): Promise<HealthCheck
 
         // Try to get monitor info for email notification
         let userEmail: string | undefined
+        let ownerUserId: string | undefined
         let monitorName = 'Unknown Monitor'
         let monitorUrl = 'N/A'
 
@@ -134,7 +150,7 @@ export async function performHealthCheck(monitorId: string): Promise<HealthCheck
                     url: true,
                     project: {
                         select: {
-                            user: { select: { email: true } }
+                            user: { select: { id: true, email: true } }
                         }
                     }
                 }
@@ -143,6 +159,7 @@ export async function performHealthCheck(monitorId: string): Promise<HealthCheck
                 monitorName = monitorInfo.name
                 monitorUrl = monitorInfo.url
                 userEmail = monitorInfo.project?.user?.email
+                ownerUserId = monitorInfo.project?.user?.id
             }
         } catch (lookupError) {
             console.error("Failed to fetch monitor info for email:", lookupError)
@@ -161,7 +178,7 @@ export async function performHealthCheck(monitorId: string): Promise<HealthCheck
             console.error("Failed to store error result:", dbError)
         }
 
-        // Send email notification for exception
+        // Send email + Slack notifications for exception
         if (userEmail) {
             await sendMonitorFailureEmail({
                 to: userEmail,
@@ -169,6 +186,18 @@ export async function performHealthCheck(monitorId: string): Promise<HealthCheck
                 url: monitorUrl,
                 message: errorMessage
             })
+        }
+        if (ownerUserId) {
+            try {
+                await notifyMonitorDownSlack({
+                    userId: ownerUserId,
+                    monitorName,
+                    url: monitorUrl,
+                    message: errorMessage
+                })
+            } catch (slackError) {
+                console.error("Failed to send Slack notification:", slackError)
+            }
         }
 
         return {

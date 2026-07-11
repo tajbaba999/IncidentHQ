@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@clerk/nextjs/server"
 import { prisma } from "@/lib/prisma"
+import { isValidSlackWebhookUrl } from "@/lib/notifications"
+import { IntegrationType } from "@/lib/generated/prisma/client"
 
 async function getDbUserId(): Promise<string | null> {
   const { userId: clerkId } = await auth()
@@ -37,12 +39,21 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "type and config are required" }, { status: 400 })
     }
 
+    if (!Object.values(IntegrationType).includes(type)) {
+      return NextResponse.json({ error: "Invalid integration type" }, { status: 400 })
+    }
+
+    // The webhook is fetched server-side later — only accept real Slack webhook URLs
+    if (type === 'SLACK' && !isValidSlackWebhookUrl(config.webhookUrl)) {
+      return NextResponse.json(
+        { error: "Webhook URL must start with https://hooks.slack.com/" },
+        { status: 400 }
+      )
+    }
+
     // Upsert — one integration per type per user
     const integration = await prisma.integration.upsert({
-      where: {
-        // Prisma doesn't support unique on [userId, type] without @@unique, so we delete+create
-        id: (await prisma.integration.findFirst({ where: { userId, type } }))?.id ?? "new",
-      },
+      where: { userId_type: { userId, type } },
       update: { config },
       create: { userId, type, config },
     })

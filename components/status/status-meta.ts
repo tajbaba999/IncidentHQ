@@ -1,6 +1,3 @@
-// Explicit light-theme colors: the public status page never uses app theme tokens
-// because the dashboard forces dark mode and visitors must always see a light page.
-
 export const COMPONENT_STATUS_META = {
   OPERATIONAL: { label: "Operational", dot: "bg-emerald-500", text: "text-emerald-600" },
   DEGRADED: { label: "Degraded", dot: "bg-yellow-500", text: "text-yellow-600" },
