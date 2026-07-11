@@ -146,6 +146,14 @@ export async function getOwnedStatusPage(statusPageId: string, userId: string) {
     })
 }
 
+/** Relations returned with every incident in the owner API responses. */
+export const incidentInclude = {
+    updates: { orderBy: { createdAt: 'desc' } },
+    components: {
+        include: { component: { select: { id: true, displayName: true } } },
+    },
+} satisfies Prisma.IncidentInclude
+
 // =====================================
 // Public status page DTO
 // =====================================
@@ -181,6 +189,7 @@ export interface PublicIncident {
     severity: Severity | null
     status: IncidentStatus
     startedAt: string
+    resolvedAt: string | null
     componentNames: string[]
     updates: PublicIncidentUpdate[] // newest first
 }
@@ -195,6 +204,35 @@ export interface PublicStatusPage {
     overallStatus: ComponentStatus
     groups: PublicGroup[]
     activeIncidents: PublicIncident[]
+}
+
+type IncidentWithRelations = {
+    id: string
+    title: string
+    severity: Severity | null
+    status: IncidentStatus
+    startedAt: Date
+    resolvedAt: Date | null
+    components: { component: { displayName: string } }[]
+    updates: { id: string; status: IncidentStatus; message: string; createdAt: Date }[]
+}
+
+function toPublicIncident(incident: IncidentWithRelations): PublicIncident {
+    return {
+        id: incident.id,
+        title: incident.title,
+        severity: incident.severity,
+        status: incident.status,
+        startedAt: incident.startedAt.toISOString(),
+        resolvedAt: incident.resolvedAt ? incident.resolvedAt.toISOString() : null,
+        componentNames: incident.components.map(join => join.component.displayName),
+        updates: incident.updates.map(update => ({
+            id: update.id,
+            status: update.status,
+            message: update.message,
+            createdAt: update.createdAt.toISOString(),
+        })),
+    }
 }
 
 /**
@@ -281,20 +319,7 @@ export async function getPublicStatusPage(
         }
     })
 
-    const activeIncidents: PublicIncident[] = page.incidents.map(incident => ({
-        id: incident.id,
-        title: incident.title,
-        severity: incident.severity,
-        status: incident.status,
-        startedAt: incident.startedAt.toISOString(),
-        componentNames: incident.components.map(join => join.component.displayName),
-        updates: incident.updates.map(update => ({
-            id: update.id,
-            status: update.status,
-            message: update.message,
-            createdAt: update.createdAt.toISOString(),
-        })),
-    }))
+    const activeIncidents: PublicIncident[] = page.incidents.map(toPublicIncident)
 
     return {
         id: page.id,
@@ -306,5 +331,62 @@ export async function getPublicStatusPage(
         overallStatus: worstStatus(groups.map(group => group.status)),
         groups,
         activeIncidents,
+    }
+}
+
+// =====================================
+// Public incident history
+// =====================================
+
+export interface StatusPageHistory {
+    id: string
+    slug: string
+    name: string
+    logoUrl: string | null
+    brandColor: string | null
+    incidents: PublicIncident[] // newest first
+}
+
+/**
+ * Incident history (last `days` days) for the public /status/[slug]/history page.
+ * Returns null when the page doesn't exist or isn't published.
+ */
+export async function getStatusPageHistory(
+    slug: string,
+    days = 90
+): Promise<StatusPageHistory | null> {
+    const since = new Date(Date.now() - days * DAY_MS)
+
+    const page = await prisma.statusPage.findUnique({
+        where: { slug },
+        select: {
+            id: true,
+            slug: true,
+            name: true,
+            logoUrl: true,
+            brandColor: true,
+            isPublished: true,
+            incidents: {
+                where: { startedAt: { gte: since } },
+                orderBy: { startedAt: 'desc' },
+                include: {
+                    updates: { orderBy: { createdAt: 'desc' } },
+                    components: {
+                        include: { component: { select: { displayName: true } } },
+                    },
+                },
+            },
+        },
+    })
+
+    if (!page || !page.isPublished) return null
+
+    return {
+        id: page.id,
+        slug: page.slug,
+        name: page.name,
+        logoUrl: page.logoUrl,
+        brandColor: page.brandColor,
+        incidents: page.incidents.map(toPublicIncident),
     }
 }

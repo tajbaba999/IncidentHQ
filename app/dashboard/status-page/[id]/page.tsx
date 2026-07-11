@@ -102,7 +102,7 @@ export default function StatusPageDetailPage() {
                     <ComponentsTab statusPage={statusPage} onChanged={refetch} />
                 </TabsContent>
                 <TabsContent value="incidents" className="mt-4">
-                    <IncidentsTab />
+                    <IncidentsTab statusPage={statusPage} />
                 </TabsContent>
                 <TabsContent value="settings" className="mt-4">
                     <SettingsTab statusPage={statusPage} onChanged={refetch} />

@@ -21,6 +21,24 @@ export interface GroupItem {
   components: ComponentItem[]
 }
 
+export interface IncidentUpdateItem {
+  id: string
+  status: string
+  message: string
+  createdAt: string
+}
+
+export interface IncidentItem {
+  id: string
+  title: string
+  severity: string | null
+  status: string
+  startedAt: string
+  resolvedAt: string | null
+  updates: IncidentUpdateItem[]
+  components: { component: { id: string; displayName: string } }[]
+}
+
 export interface StatusPageConfig {
   id: string
   slug: string
