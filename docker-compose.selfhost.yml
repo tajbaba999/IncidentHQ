@@ -1,0 +1,43 @@
+# Self-hosted PulsePing: app + Postgres in one stack.
+# Usage (see SELF_HOSTING.md):
+#   cp .env.selfhost.example .env.selfhost   # then fill in your Clerk keys
+#   docker compose -f docker-compose.selfhost.yml --env-file .env.selfhost up -d --build
+#
+# The dev stack in docker-compose.yml is unrelated — leave it alone.
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        # Baked into the client bundle at build time — rebuild after changing.
+        NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}
+        NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-http://localhost:3000}
+    env_file: .env.selfhost
+    environment:
+      DEPLOY_MODE: selfhost
+    ports:
+      - "3000:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: pulseping
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-pulseping}
+      POSTGRES_DB: pulseping
+    volumes:
+      - pulseping_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pulseping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+volumes:
+  pulseping_pgdata:

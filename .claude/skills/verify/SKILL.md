@@ -20,10 +20,10 @@ POSTGRES_USER=pulseping POSTGRES_PASSWORD=pulseping POSTGRES_DB=pulseping \
   docker compose up -d postgres          # host port 5432
 ```
 
-⚠️ `pnpm prisma migrate deploy` FAILS on a fresh DB — migration history never
-creates the `Severity` enum (schema drift from an old `db push`). Until fixed,
-use `pnpm prisma db push --accept-data-loss` instead (`--skip-generate` no
-longer exists in Prisma 7).
+`pnpm prisma migrate deploy` works on fresh DBs since the
+`20260709000000_repair_schema_drift` migration (idempotent — also safe on
+existing DBs). Note `--skip-generate` no longer exists in Prisma 7, and
+`migrate diff` now uses `--from-config-datasource --to-schema`.
 
 Inspect/seed with `docker exec incidenthq-postgres-1 psql -U pulseping -c '...'`.
 Minimum seed chain: `"User"` → `"Project"` → `"Monitor"` (only id/FKs/name/url/
@@ -52,3 +52,26 @@ Gotchas:
   local Postgres. Scheduler stays off in saas production — expected.
 - Two `next start` instances on different ports share one `.next` build but read
   their own env — handy for comparing modes side by side.
+- Killing a backgrounded `pnpm next start` kills only the wrapper; the
+  `next-server` child survives and squats the port. Check
+  `lsof -nP -iTCP:3000 -sTCP:LISTEN` and kill the node PID.
+
+## Self-host Docker stack
+
+```bash
+cp .env.selfhost.example .env.selfhost   # placeholder Clerk keys fine for public routes
+docker compose -f docker-compose.selfhost.yml --env-file .env.selfhost up -d --build
+docker compose -f docker-compose.selfhost.yml --env-file .env.selfhost logs app
+```
+
+Boot proof points: "All migrations have been successfully applied" →
+"🚀 Starting Monitor Scheduler..." (instrumentation.ts starts it at boot;
+a second "⏰ Scheduler already running" line is the layout import hitting the
+globalThis guard — expected). Seed via
+`... exec -T postgres psql -U pulseping -d pulseping -c '...'`; the scheduler
+picks up new monitors within ~60s. Tear down with `down -v` to reset the DB.
+Gotchas: both compose files share the `incidenthq` project name, so they reuse
+the container name `incidenthq-postgres-1`; pass `--env-file .env.selfhost` to
+EVERY compose command or you get blank-variable warnings; Docker build cache
+grows fast (~20GB caused disk-full daemon crashes once) — `docker builder
+prune -af` if the daemon gets flaky.

@@ -31,3 +31,9 @@ tsconfig.tsbuildinfo
 
 # Next.js generated
 next-env.d.ts
+
+# Self-host secrets
+.env.selfhost
+
+# clerk configuration (can include secrets)
+/.clerk/

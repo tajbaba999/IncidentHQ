@@ -164,8 +164,16 @@ class MonitorScheduler {
     }
 }
 
-// Singleton instance
-export const monitorScheduler = new MonitorScheduler()
+declare global {
+    // eslint-disable-next-line no-var
+    var monitorSchedulerGlobal: undefined | MonitorScheduler
+}
+
+// Singleton instance — cached on globalThis because this module is bundled
+// separately for instrumentation.ts and the app tree; without the cache each
+// bundle would run its own scheduler and double-check every monitor.
+export const monitorScheduler = globalThis.monitorSchedulerGlobal ?? new MonitorScheduler()
+globalThis.monitorSchedulerGlobal = monitorScheduler
 
 // Auto-start only in long-lived processes (self-host / local dev):
 // on Vercel serverless the intervals die with the invocation (SaaS uses the
