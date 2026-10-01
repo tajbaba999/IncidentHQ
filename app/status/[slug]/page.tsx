@@ -65,7 +65,7 @@ export default async function PublicStatusPage({
                 </header>
 
                 <div className="mt-6 space-y-6">
-                    <UnsubscribedNotice />
+                    <UnsubscribedNotice slug={page.slug} />
 
                     {/* Overall status hero */}
                     <div

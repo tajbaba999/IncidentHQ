@@ -24,6 +24,9 @@ export function isValidSlackWebhookUrl(url: unknown): url is string {
     return typeof url === 'string' && url.startsWith('https://hooks.slack.com/')
 }
 
+/** Slack mrkdwn treats `<`, `>` and `&` as link/mention syntax. */
+const slackEscape = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+
 function getAppUrl(): string {
     return process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
 }
@@ -140,17 +143,17 @@ export async function notifyIncidentEvent({
                         type: 'section',
                         text: {
                             type: 'mrkdwn',
-                            text: `*<${statusUrl}|${incident.title}>*\n*Status:* ${statusLabel}${severityLine}`,
+                            text: `*<${statusUrl}|${slackEscape(incident.title)}>*\n*Status:* ${statusLabel}${severityLine}`,
                         },
                     },
                     {
                         type: 'section',
-                        text: { type: 'mrkdwn', text: message },
+                        text: { type: 'mrkdwn', text: slackEscape(message) },
                     },
                     {
                         type: 'context',
                         elements: [
-                            { type: 'mrkdwn', text: `${page.name} • <${statusUrl}|View status page>` },
+                            { type: 'mrkdwn', text: `${slackEscape(page.name)} • <${statusUrl}|View status page>` },
                         ],
                     },
                 ],
@@ -209,7 +212,7 @@ export async function notifyMonitorDownSlack({
                 },
                 {
                     type: 'section',
-                    text: { type: 'mrkdwn', text: `*${monitorName}*\n${details}` },
+                    text: { type: 'mrkdwn', text: `*${slackEscape(monitorName)}*\n${slackEscape(details)}` },
                 },
                 {
                     type: 'context',

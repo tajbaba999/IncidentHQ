@@ -9,6 +9,16 @@ export interface HealthCheckResult {
     message?: string
 }
 
+/** Alerts fire only on the up→down transition, not on every failed check while down. */
+async function wasUp(monitorId: string): Promise<boolean> {
+    const last = await prisma.monitorRun.findFirst({
+        where: { monitorId },
+        orderBy: { createdAt: 'desc' },
+        select: { success: true }
+    })
+    return last?.success ?? true
+}
+
 /**
  * Performs a health check on a monitor by making an HTTP request
  * and recording the results in the MonitorRun table
@@ -88,6 +98,7 @@ export async function performHealthCheck(monitorId: string): Promise<HealthCheck
         const success = statusCode === monitor.expectedStatus
 
         const failureMessage = `Expected status ${monitor.expectedStatus}, got ${statusCode}`
+        const shouldAlert = !success && await wasUp(monitor.id)
 
         // Store the result
         await prisma.monitorRun.create({
@@ -100,8 +111,8 @@ export async function performHealthCheck(monitorId: string): Promise<HealthCheck
             }
         })
 
-        // Send email + Slack notifications on failure
-        if (!success && monitor.project?.user?.email) {
+        // Send email + Slack notifications when the monitor goes down
+        if (shouldAlert && monitor.project?.user?.email) {
             await sendMonitorFailureEmail({
                 to: monitor.project.user.email,
                 monitorName: monitor.name,
@@ -111,7 +122,7 @@ export async function performHealthCheck(monitorId: string): Promise<HealthCheck
                 responseTime
             })
         }
-        if (!success && monitor.project?.user?.id) {
+        if (shouldAlert && monitor.project?.user?.id) {
             try {
                 await notifyMonitorDownSlack({
                     userId: monitor.project.user.id,
@@ -165,6 +176,8 @@ export async function performHealthCheck(monitorId: string): Promise<HealthCheck
             console.error("Failed to fetch monitor info for email:", lookupError)
         }
 
+        const shouldAlert = await wasUp(monitorId).catch(() => true)
+
         // Try to store the failed result
         try {
             await prisma.monitorRun.create({
@@ -178,8 +191,8 @@ export async function performHealthCheck(monitorId: string): Promise<HealthCheck
             console.error("Failed to store error result:", dbError)
         }
 
-        // Send email + Slack notifications for exception
-        if (userEmail) {
+        // Send email + Slack notifications when the monitor goes down
+        if (shouldAlert && userEmail) {
             await sendMonitorFailureEmail({
                 to: userEmail,
                 monitorName,
@@ -187,7 +200,7 @@ export async function performHealthCheck(monitorId: string): Promise<HealthCheck
                 message: errorMessage
             })
         }
-        if (ownerUserId) {
+        if (shouldAlert && ownerUserId) {
             try {
                 await notifyMonitorDownSlack({
                     userId: ownerUserId,

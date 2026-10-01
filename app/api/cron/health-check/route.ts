@@ -2,53 +2,6 @@ import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { performHealthCheck } from "@/lib/health-check"
 
-/**
- * POST /api/cron/health-check
- * Called by the cron scheduler to trigger a health check
- * Stores the result in MonitorRun
- */
-export async function POST(request: NextRequest) {
-    try {
-        // Safely parse JSON body
-        let body: { monitorId?: string } = {}
-        try {
-            const text = await request.text()
-            if (text) {
-                body = JSON.parse(text)
-            }
-        } catch {
-            return NextResponse.json(
-                { error: "Invalid JSON body" },
-                { status: 400 }
-            )
-        }
-
-        const { monitorId } = body
-
-        if (!monitorId) {
-            return NextResponse.json(
-                { error: "monitorId is required" },
-                { status: 400 }
-            )
-        }
-
-        // Run the health check
-        const result = await performHealthCheck(monitorId)
-
-        return NextResponse.json(result, { status: 200 })
-
-    } catch (error) {
-        console.error("Health check API error:", error)
-        return NextResponse.json(
-            {
-                success: false,
-                error: error instanceof Error ? error.message : "Unknown error"
-            },
-            { status: 500 }
-        )
-    }
-}
-
 // Bounds one sweep so a large fleet can't outlive the serverless invocation;
 // the next minute's sweep picks up whatever is still due.
 const SWEEP_BATCH_LIMIT = 50

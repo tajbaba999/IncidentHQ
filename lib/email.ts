@@ -11,6 +11,10 @@ function getResend(): Resend {
 }
 
 // From email - use your verified domain or Resend dev email
+/** User-supplied text goes into email HTML; keep `<`, `&`, quotes literal. */
+const esc = (s: string) =>
+    s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+
 const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || 'PulsePing <onboarding@resend.dev>'
 
 interface MonitorFailureEmailParams {
@@ -45,7 +49,7 @@ export async function sendMonitorFailureEmail({
                     <div style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); border-radius: 12px; padding: 24px; margin-bottom: 24px;">
                         <h1 style="color: white; margin: 0; font-size: 24px;">🚨 Monitor Alert</h1>
                         <p style="color: rgba(255,255,255,0.9); margin: 8px 0 0 0; font-size: 16px;">
-                            <strong>${monitorName}</strong> is not responding as expected
+                            <strong>${esc(monitorName)}</strong> is not responding as expected
                         </p>
                     </div>
 
@@ -55,12 +59,12 @@ export async function sendMonitorFailureEmail({
                         <table style="width: 100%; border-collapse: collapse;">
                             <tr>
                                 <td style="padding: 12px 0; border-bottom: 1px solid #e5e7eb; color: #6b7280; width: 140px;">Monitor</td>
-                                <td style="padding: 12px 0; border-bottom: 1px solid #e5e7eb; color: #111827; font-weight: 500;">${monitorName}</td>
+                                <td style="padding: 12px 0; border-bottom: 1px solid #e5e7eb; color: #111827; font-weight: 500;">${esc(monitorName)}</td>
                             </tr>
                             <tr>
                                 <td style="padding: 12px 0; border-bottom: 1px solid #e5e7eb; color: #6b7280;">URL</td>
                                 <td style="padding: 12px 0; border-bottom: 1px solid #e5e7eb; color: #111827;">
-                                    <a href="${url}" style="color: #2563eb; text-decoration: none;">${url}</a>
+                                    <a href="${esc(url)}" style="color: #2563eb; text-decoration: none;">${esc(url)}</a>
                                 </td>
                             </tr>
                             ${statusCode ? `
@@ -79,7 +83,7 @@ export async function sendMonitorFailureEmail({
                             ` : ''}
                             <tr>
                                 <td style="padding: 12px 0; color: #6b7280;">Error</td>
-                                <td style="padding: 12px 0; color: #dc2626;">${message}</td>
+                                <td style="padding: 12px 0; color: #dc2626;">${esc(message)}</td>
                             </tr>
                         </table>
                     </div>
@@ -168,8 +172,8 @@ export async function sendIncidentUpdateEmail({
     const buildHtml = (unsubscribeUrl: string) => `
         <div style="font-family: 'Segoe UI', Roboto, Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
             <div style="background: #18181b; border-radius: 12px; padding: 24px; margin-bottom: 24px;">
-                <p style="color: rgba(255,255,255,0.7); margin: 0 0 4px 0; font-size: 13px;">${pageName} status update</p>
-                <h1 style="color: white; margin: 0; font-size: 20px;">${incidentTitle}</h1>
+                <p style="color: rgba(255,255,255,0.7); margin: 0 0 4px 0; font-size: 13px;">${esc(pageName)} status update</p>
+                <h1 style="color: white; margin: 0; font-size: 20px;">${esc(incidentTitle)}</h1>
                 <p style="margin: 12px 0 0 0;">
                     <span style="background: ${statusMeta.color}; color: white; padding: 4px 12px; border-radius: 9999px; font-size: 13px; font-weight: 600;">
                         ${statusMeta.label}
@@ -178,7 +182,7 @@ export async function sendIncidentUpdateEmail({
             </div>
 
             <div style="background: #f9fafb; border-radius: 12px; padding: 24px; margin-bottom: 24px;">
-                <p style="color: #111827; margin: 0; font-size: 15px; line-height: 1.6; white-space: pre-wrap;">${message}</p>
+                <p style="color: #111827; margin: 0; font-size: 15px; line-height: 1.6; white-space: pre-wrap;">${esc(message)}</p>
             </div>
 
             <div style="text-align: center; margin-bottom: 24px;">
@@ -189,7 +193,7 @@ export async function sendIncidentUpdateEmail({
 
             <div style="text-align: center; padding: 16px 0; border-top: 1px solid #e5e7eb;">
                 <p style="color: #6b7280; font-size: 12px; margin: 0;">
-                    You're receiving this because you subscribed to updates for ${pageName}.<br/>
+                    You're receiving this because you subscribed to updates for ${esc(pageName)}.<br/>
                     <a href="${unsubscribeUrl}" style="color: #6b7280;">Unsubscribe</a>
                 </p>
             </div>
@@ -209,6 +213,11 @@ export async function sendIncidentUpdateEmail({
                         to: [recipient.email],
                         subject,
                         html: buildHtml(unsubscribeUrl),
+                        // RFC 8058 one-click: mail clients POST here, so link scanners can't unsubscribe anyone
+                        headers: {
+                            'List-Unsubscribe': `<${unsubscribeUrl}>`,
+                            'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+                        },
                     }
                 })
             )

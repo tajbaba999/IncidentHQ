@@ -1,15 +1,11 @@
 import { prisma } from "@/lib/prisma"
 import { schedulerEnabled } from "@/lib/config"
+import { performHealthCheck } from "@/lib/health-check"
 
 interface MonitorSchedule {
     monitorId: string
     intervalId: NodeJS.Timeout
     frequency: number
-}
-
-// Get base URL for API calls
-const getBaseUrl = () => {
-    return process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
 }
 
 class MonitorScheduler {
@@ -88,11 +84,11 @@ class MonitorScheduler {
         console.log(`➕ Scheduling "${name}" (${monitorId}) - every ${frequency}s`)
 
         // Run immediately on schedule
-        this.triggerHealthCheckAPI(monitorId, name)
+        this.runCheck(monitorId, name)
 
         // Then run on interval
         const intervalId = setInterval(() => {
-            this.triggerHealthCheckAPI(monitorId, name)
+            this.runCheck(monitorId, name)
         }, intervalMs)
 
         this.schedules.set(monitorId, {
@@ -115,19 +111,14 @@ class MonitorScheduler {
     }
 
     /**
-     * Makes a POST request to the health check API endpoint
+     * Runs the check in-process (no HTTP hop to our own URL, which may not be
+     * reachable from inside a container)
      */
-    private async triggerHealthCheckAPI(monitorId: string, name: string) {
-        console.log(`🔍 Triggering API health check for "${name}"`)
+    private async runCheck(monitorId: string, name: string) {
+        console.log(`🔍 Running health check for "${name}"`)
 
         try {
-            const response = await fetch(`${getBaseUrl()}/api/cron/health-check`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ monitorId })
-            })
-
-            const result = await response.json()
+            const result = await performHealthCheck(monitorId)
 
             if (result.success) {
                 console.log(`✅ "${name}" - ${result.statusCode} in ${result.responseTime}ms`)
@@ -135,7 +126,7 @@ class MonitorScheduler {
                 console.log(`❌ "${name}" - ${result.message}`)
             }
         } catch (error) {
-            console.error(`💥 API call failed for "${name}":`, error)
+            console.error(`💥 Health check failed for "${name}":`, error)
         }
     }
 
