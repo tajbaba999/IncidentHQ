@@ -30,7 +30,7 @@ export async function POST(req: Request) {
         }
 
         // Get the Clerk webhook secret from environment variables
-        const WEBHOOK_SECRET = process.env.CLERK_WEBHOOK_SECRET
+        const WEBHOOK_SECRET = process.env.CLERK_WEBHOOK_SECRET ?? process.env.SVIX_SECRET
 
         if (!WEBHOOK_SECRET) {
             throw new Error('Please add CLERK_WEBHOOK_SECRET to your .env file')

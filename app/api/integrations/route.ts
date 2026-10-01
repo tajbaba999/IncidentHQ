@@ -1,15 +1,8 @@
 import { NextRequest, NextResponse } from "next/server"
-import { auth } from "@clerk/nextjs/server"
 import { prisma } from "@/lib/prisma"
 import { isValidSlackWebhookUrl } from "@/lib/notifications"
 import { IntegrationType } from "@/lib/generated/prisma/client"
-
-async function getDbUserId(): Promise<string | null> {
-  const { userId: clerkId } = await auth()
-  if (!clerkId) return null
-  const user = await prisma.user.findUnique({ where: { clerkId }, select: { id: true } })
-  return user?.id ?? null
-}
+import { getDbUserId } from "@/lib/auth"
 
 export async function GET() {
   try {

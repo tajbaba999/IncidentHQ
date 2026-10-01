@@ -1,53 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
-import { auth, currentUser } from "@clerk/nextjs/server"
 import { prisma } from "@/lib/prisma"
-import { headers } from "next/headers"
-
-// Helper function to get internal database userId with test mode support
-async function getDbUserId(): Promise<string | null> {
-    const headerPayload = await headers()
-    const isTestMode = headerPayload.get('x-test-auth') === 'true' && process.env.NODE_ENV !== 'production'
-
-    let clerkId: string | null = null
-
-    if (isTestMode) {
-        // In test mode, x-test-user-id should be the database user ID directly
-        const testUserId = headerPayload.get('x-test-user-id')
-        console.log('⚠️ TEST MODE: Using test user ID:', testUserId)
-        return testUserId
-    } else {
-        const authResult = await auth()
-        clerkId = authResult.userId
-    }
-
-    if (!clerkId) return null
-
-    // Look up the internal database user ID from Clerk ID
-    let user = await prisma.user.findUnique({
-        where: { clerkId },
-        select: { id: true }
-    })
-
-    // If user doesn't exist in database, create them
-    if (!user) {
-        const clerkUser = await currentUser()
-        if (clerkUser) {
-            user = await prisma.user.create({
-                data: {
-                    clerkId: clerkUser.id,
-                    email: clerkUser.emailAddresses[0]?.emailAddress || '',
-                    firstName: clerkUser.firstName || null,
-                    lastName: clerkUser.lastName || null,
-                    imageUrl: clerkUser.imageUrl || null,
-                },
-                select: { id: true }
-            })
-            console.log('✅ Auto-created user in database:', user.id)
-        }
-    }
-
-    return user?.id || null
-}
+import { getDbUserId } from "@/lib/auth"
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     try {

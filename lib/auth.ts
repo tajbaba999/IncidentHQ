@@ -1,4 +1,4 @@
-import { auth } from "@clerk/nextjs/server"
+import { auth, currentUser } from "@clerk/nextjs/server"
 import { headers } from "next/headers"
 import { prisma } from "@/lib/prisma"
 
@@ -22,6 +22,22 @@ export async function getDbUserId(): Promise<string | null> {
         where: { clerkId },
         select: { id: true }
     })
+    if (user) return user.id
 
-    return user?.id || null
+    // No row yet (Clerk webhook not configured/delivered, e.g. self-host on localhost): create it now
+    const clerkUser = await currentUser()
+    if (!clerkUser) return null
+    const created = await prisma.user.upsert({
+        where: { clerkId },
+        update: {},
+        create: {
+            clerkId,
+            email: clerkUser.emailAddresses[0]?.emailAddress || '',
+            firstName: clerkUser.firstName || null,
+            lastName: clerkUser.lastName || null,
+            imageUrl: clerkUser.imageUrl || null,
+        },
+        select: { id: true }
+    })
+    return created.id
 }

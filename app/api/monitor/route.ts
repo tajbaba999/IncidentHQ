@@ -1,36 +1,7 @@
 import { NextResponse } from "next/server"
-import { auth } from "@clerk/nextjs/server"
 import { prisma } from "@/lib/prisma"
 import { HttpMethod, AuthType } from "@/lib/generated/prisma/client"
-import { headers } from "next/headers"
-
-// Helper function to get internal database userId with test mode support
-async function getDbUserId(): Promise<string | null> {
-    const headerPayload = await headers()
-    const isTestMode = headerPayload.get('x-test-auth') === 'true' && process.env.NODE_ENV !== 'production'
-
-    let clerkId: string | null = null
-
-    if (isTestMode) {
-        // In test mode, x-test-user-id should be the database user ID directly
-        const testUserId = headerPayload.get('x-test-user-id')
-        console.log('⚠️ TEST MODE: Using test user ID:', testUserId)
-        return testUserId
-    } else {
-        const authResult = await auth()
-        clerkId = authResult.userId
-    }
-
-    if (!clerkId) return null
-
-    // Look up the internal database user ID from Clerk ID
-    const user = await prisma.user.findUnique({
-        where: { clerkId },
-        select: { id: true }
-    })
-
-    return user?.id || null
-}
+import { getDbUserId } from "@/lib/auth"
 
 export async function POST(request: Request) {
     try {

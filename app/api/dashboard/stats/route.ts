@@ -1,28 +1,6 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
-import { auth } from "@clerk/nextjs/server"
-import { headers } from "next/headers"
-
-// Helper function to get internal database userId
-async function getDbUserId(): Promise<string | null> {
-    const headerPayload = await headers()
-    const isTestMode = headerPayload.get('x-test-auth') === 'true' && process.env.NODE_ENV !== 'production'
-
-    if (isTestMode) {
-        return headerPayload.get('x-test-user-id')
-    }
-
-    const authResult = await auth()
-    const clerkId = authResult.userId
-    if (!clerkId) return null
-
-    const user = await prisma.user.findUnique({
-        where: { clerkId },
-        select: { id: true }
-    })
-
-    return user?.id || null
-}
+import { getDbUserId } from "@/lib/auth"
 
 export async function GET() {
     try {

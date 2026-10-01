@@ -34,7 +34,7 @@ Open `.env.local` and fill in the required values:
 | `CLERK_SECRET_KEY` | Clerk dashboard → API Keys |
 | `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | Clerk dashboard → API Keys |
 | `RESEND_API_KEY` | Resend dashboard → API Keys |
-| `SVIX_SECRET` | Clerk dashboard → Webhooks → Signing Secret |
+| `CLERK_WEBHOOK_SECRET` | Clerk dashboard → Webhooks → Signing Secret |
 
 Clerk redirect URLs to add in `.env.local`:
 
@@ -110,7 +110,7 @@ The Next.js dashboard deploys to Vercel. The Fastify API and worker are separate
    - `CLERK_SECRET_KEY`
    - `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`
    - `RESEND_API_KEY`
-   - `SVIX_SECRET`
+   - `CLERK_WEBHOOK_SECRET`
    - All `NEXT_PUBLIC_CLERK_*` redirect variables
 6. Click **Deploy**.
 
